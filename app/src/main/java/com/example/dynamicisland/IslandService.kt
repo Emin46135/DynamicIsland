@@ -56,7 +56,7 @@ class IslandService : NotificationListenerService() {
     private val back = Runnable { current = live; render(false) }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-    private fun yOff() = dp(getSharedPreferences("p", MODE_PRIVATE).getInt("y", 8))
+    private fun yOff() = dp(getSharedPreferences("p", MODE_PRIVATE).getInt("y2", 38) - 30)
 
     override fun onListenerConnected() {
         instance = this
@@ -138,7 +138,12 @@ class IslandService : NotificationListenerService() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
-        ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; y = yOff() }
+        ).apply {
+    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+    y = yOff()
+    flags = flags or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+    if (android.os.Build.VERSION.SDK_INT >= 28) layoutInDisplayCutoutMode = 1
+        }
     }
 
     private fun pill(label: String, run: () -> Unit) = TextView(this).apply {
