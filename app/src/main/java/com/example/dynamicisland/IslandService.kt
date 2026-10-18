@@ -26,6 +26,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import android.graphics.Outline
+import android.graphics.drawable.BitmapDrawable
+import android.media.MediaMetadata
+import android.view.ViewOutlineProvider
 
 class IslandService : NotificationListenerService() {
 
@@ -96,7 +100,15 @@ class IslandService : NotificationListenerService() {
             setPadding(dp(14), dp(6), dp(14), dp(6))
             setOnClickListener { if (current != null) render(!expanded) }
         }
-        icon = ImageView(this)
+        icon = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            clipToOutline = true
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(v: View, o: Outline) {
+                    o.setRoundRect(0, 0, v.width, v.height, dp(8).toFloat())
+                }
+            }
+        }
         title = TextView(this).apply {
             setTextColor(Color.WHITE); textSize = 14f; setTypeface(typeface, Typeface.BOLD)
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END
@@ -148,6 +160,8 @@ class IslandService : NotificationListenerService() {
         actionsRow.removeAllViews()
         if (it != null) {
             icon.setImageDrawable(it.icon); title.text = it.title; text.text = it.text
+            val sz = if (expanded) dp(48) else dp(28)
+            icon.layoutParams = LinearLayout.LayoutParams(sz, sz)
             if (expanded) it.actions.forEach { (l, r) -> actionsRow.addView(pill(l, r)) }
         }
         actionsRow.visibility = if (actionsRow.childCount > 0) View.VISIBLE else View.GONE
@@ -172,7 +186,7 @@ class IslandService : NotificationListenerService() {
         val ex = n.extras
         val t = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: return
         val body = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-        val appIcon = runCatching { packageManager.getApplicationIcon(sbn.packageName) }.getOrNull()
+        var appIcon: Drawable? = runCatching { packageManager.getApplicationIcon(sbn.packageName) }.getOrNull()
         val acts = mutableListOf<Pair<String, () -> Unit>>()
 
         @Suppress("DEPRECATION")
@@ -181,6 +195,13 @@ class IslandService : NotificationListenerService() {
         val isCall = n.category == Notification.CATEGORY_CALL
         if (isMedia) {
             val mc = MediaController(this, token!!)
+            val bmp = mc.metadata?.let {
+                it.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                    ?: it.getBitmap(MediaMetadata.METADATA_KEY_ART)
+            }
+            val art: Drawable? = if (bmp != null) BitmapDrawable(resources, bmp)
+            else runCatching { n.getLargeIcon()?.loadDrawable(this) }.getOrNull()
+            if (art != null) appIcon = art
             acts += "⏮" to { mc.transportControls.skipToPrevious() }
             acts += "⏯" to {
                 if (mc.playbackState?.state == PlaybackState.STATE_PLAYING)
