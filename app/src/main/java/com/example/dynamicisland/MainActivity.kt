@@ -36,10 +36,10 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply { text = "Yukarıdan uzaklık (kamera deliğine hizala)"; setPadding(0, (16 * d).toInt(), 0, 0) })
         val prefs = getSharedPreferences("p", Context.MODE_PRIVATE)
         root.addView(SeekBar(this).apply {
-            max = 120; progress = prefs.getInt("y", 8)
+        max = 150; progress = prefs.getInt("y2", 38)
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(s: SeekBar, p: Int, u: Boolean) {
-                    prefs.edit().putInt("y", p).apply(); IslandService.instance?.reposition()
+                prefs.edit().putInt("y2", p).apply(); IslandService.instance?.reposition()
                 }
                 override fun onStartTrackingTouch(s: SeekBar) {}
                 override fun onStopTrackingTouch(s: SeekBar) {}
